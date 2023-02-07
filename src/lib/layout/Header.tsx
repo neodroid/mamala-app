@@ -1,12 +1,30 @@
-import { Box, Flex } from "@chakra-ui/react";
+import { Box, Flex, Text, Button, Avatar } from "@chakra-ui/react";
 
-import ThemeToggle from "./ThemeToggle";
+import { useLogin } from "lib/hooks/useLogin";
 
 const Header = () => {
+  const [user, loading, signIn, signOut] = useLogin();
+
   return (
     <Flex as="header" width="full" align="center">
       <Box marginLeft="auto">
-        <ThemeToggle />
+        {loading ? (
+          <Text>Loading...</Text>
+        ) : (
+          <Flex>
+            {user ? (
+              <Flex>
+                <Button onClick={signOut}>Sign Out</Button>
+                <Avatar
+                  name={user.displayName || ""}
+                  src={user.photoURL || ""}
+                />
+              </Flex>
+            ) : (
+              <Button onClick={signIn}>Sign In</Button>
+            )}
+          </Flex>
+        )}
       </Box>
     </Flex>
   );
