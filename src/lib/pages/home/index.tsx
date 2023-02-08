@@ -58,8 +58,8 @@ const Home = () => {
         const data = await response.json();
         if (data.result) {
           localStorage.removeItem(`nickname_${data.result}`);
-          setIsSearching(false);
           router.push(`/party/${data.result}`);
+          setIsSearching(false);
         } else {
           handlePartyNotFound();
           // console.log("party not found");

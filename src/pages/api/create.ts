@@ -30,6 +30,12 @@ async function createParty(hostUID: string, code: string) {
     code,
     createdAt: new Date(),
   });
+  await firestore
+    .collection("party")
+    .doc(partyRef.id)
+    .collection("players")
+    .doc(hostUID)
+    .set({ joined: true, ready: false }, { merge: true });
   return partyRef.id;
 }
 

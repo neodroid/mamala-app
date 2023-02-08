@@ -13,6 +13,7 @@ const Party = () => {
   const queryID = router.query.partyID as string;
   const [inputValue, setInputValue] = useState("");
   const [nickname, setNickname] = useState("");
+  const [joinLoading, setJoinLoading] = useState(false);
   const [user, loading] = useLogin();
 
   useEffect(() => {
@@ -30,9 +31,30 @@ const Party = () => {
     }
   }, [queryID]);
 
-  const handleNicknameEnter = () => {
+  const handleNicknameEnter = async () => {
+    setJoinLoading(true);
     setNickname(inputValue);
     localStorage.setItem(`nickname_${queryID}`, inputValue);
+    try {
+      const response = await fetch("/api/join", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          partyId: queryID,
+          uid: user?.uid,
+          nickname: inputValue,
+        }),
+      });
+      const data = await response.json();
+      if (data.result) {
+        setJoinLoading(false);
+      }
+    } catch (error) {
+      setJoinLoading(false);
+      // console.error(error);
+    }
   };
 
   if (loading) {
@@ -67,7 +89,13 @@ const Party = () => {
           <Button onClick={handleNicknameEnter}>Enter</Button>
         </Stack>
       ) : (
-        <Lobby nickname={nickname} />
+        <Flex>
+          {joinLoading ? (
+            <Spinner />
+          ) : (
+            <Lobby nickname={nickname} gameID={queryID} user={user} />
+          )}
+        </Flex>
       )}
     </Flex>
   );
