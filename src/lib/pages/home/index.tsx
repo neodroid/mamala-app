@@ -1,4 +1,4 @@
-import { Button, Flex, Input, Text, useToast } from "@chakra-ui/react";
+import { Button, Flex, Input, Spinner, Text, useToast } from "@chakra-ui/react";
 import { NextSeo } from "next-seo";
 import { useRouter } from "next/router";
 import { useState } from "react";
@@ -10,6 +10,7 @@ const Home = () => {
   const toast = useToast();
   const [user, loading, signIn] = useLogin();
   const [inputValue, setInputValue] = useState("");
+  const [isSeraching, setIsSearching] = useState(false);
   const handleCreateParty = async () => {
     if (user?.email) {
       try {
@@ -39,11 +40,13 @@ const Home = () => {
       duration: 9000,
       isClosable: true,
     });
+    setIsSearching(false);
     setInputValue("");
   };
 
   const handleSearchParty = async () => {
     if (inputValue.length === 4) {
+      setIsSearching(true);
       try {
         const response = await fetch("/api/search", {
           method: "POST",
@@ -55,12 +58,14 @@ const Home = () => {
         const data = await response.json();
         if (data.result) {
           localStorage.removeItem(`nickname_${data.result}`);
+          setIsSearching(false);
           router.push(`/party/${data.result}`);
         } else {
           handlePartyNotFound();
           // console.log("party not found");
         }
       } catch (error) {
+        setIsSearching(false);
         // console.error(error);
       }
     }
@@ -90,13 +95,22 @@ const Home = () => {
           }
         }}
       />
-      <Button onClick={handleSearchParty} isDisabled={inputValue.length !== 4}>
-        Enter Code
-      </Button>
-      <Text mt="5">or</Text>
-      <Button mt="5" onClick={handleCreateParty}>
-        Create Party
-      </Button>
+      {isSeraching ? (
+        <Spinner />
+      ) : (
+        <>
+          <Button
+            onClick={handleSearchParty}
+            isDisabled={inputValue.length !== 4}
+          >
+            Enter Code
+          </Button>
+          <Text mt="5">or</Text>
+          <Button mt="5" onClick={handleCreateParty}>
+            Create Party
+          </Button>
+        </>
+      )}
     </Flex>
   );
 };
