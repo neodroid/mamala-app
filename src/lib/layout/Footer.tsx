@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <Flex as="footer" width="full" justifyContent="center">
       <Text fontSize="sm">
-        {new Date().getFullYear()} - made with love by{" "}
+        {new Date().getFullYear()} - made with ❤️ by{" "}
         <Link
           href="https://twitter.com/kevinahmad"
           isExternal

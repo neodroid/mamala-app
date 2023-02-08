@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 import { auth } from "lib/firebase";
 import { useLogin } from "lib/hooks/useLogin";
+
+import Lobby from "./lobby";
 // import firebase
 
 const Party = () => {
@@ -49,6 +51,7 @@ const Party = () => {
       gap={4}
       mb={8}
       w="full"
+      // bg="blue"
     >
       <Text>{queryID}</Text>
       {user && !nickname ? (
@@ -64,10 +67,7 @@ const Party = () => {
           <Button onClick={handleNicknameEnter}>Enter</Button>
         </Stack>
       ) : (
-        <Stack>
-          <Text>{user?.uid}</Text>
-          <Text>Your nickname: {nickname || "anonymous"}</Text>
-        </Stack>
+        <Lobby nickname={nickname} />
       )}
     </Flex>
   );

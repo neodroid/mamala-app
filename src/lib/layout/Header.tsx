@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/router";
 
 import { useLogin } from "lib/hooks/useLogin";
+// import ThemeToggle from "./ThemeToggle";
 
 const Header = () => {
   const router = useRouter();
@@ -31,6 +32,7 @@ const Header = () => {
       <Text cursor="pointer" onClick={handleLogoClick}>
         Mamala
       </Text>
+      {/* <ThemeToggle/> */}
       <Box marginLeft="auto">
         {loading ? (
           <Spinner />
