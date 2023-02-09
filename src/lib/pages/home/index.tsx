@@ -13,6 +13,7 @@ const Home = () => {
   const [isSeraching, setIsSearching] = useState(false);
   const handleCreateParty = async () => {
     if (user?.email) {
+      setIsSearching(true);
       try {
         const response = await fetch("/api/create", {
           method: "POST",
@@ -24,7 +25,9 @@ const Home = () => {
         const data = await response.json();
         localStorage.removeItem(`nickname${data.result}`);
         router.push(`/party/${data.result}`);
+        setIsSearching(false);
       } catch (error) {
+        setIsSearching(false);
         // console.error(error);
       }
     } else if (!loading) {

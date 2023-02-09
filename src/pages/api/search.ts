@@ -5,19 +5,36 @@ import { firestore } from "lib/firebase-admin";
 
 const lobbyRef = firestore.collection("party");
 
-async function searchParty(code: string) {
+async function searchPartyUsingCode(code: string) {
   const query = await lobbyRef.where("code", "==", code).get();
   if (query.empty) {
-    // console.error("No matching lobby found");
     return null;
   }
-  return query.docs[0].id;
+  return {
+    result: query.docs[0].id,
+    ...query.docs[0].data(),
+  };
+}
+
+async function searchPartyUsingId(id: string) {
+  const query = await lobbyRef.doc(id).get();
+  if (query.exists) {
+    return query.data();
+  }
+  return null;
 }
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  const { code } = req.body;
-  const partyId = await searchParty(code);
-  res.json({
-    result: partyId,
-  });
+  const { code, id } = req.body;
+  if (code) {
+    const result = await searchPartyUsingCode(code);
+    res.json(result);
+  } else if (id) {
+    const result = await searchPartyUsingId(id);
+    res.json(result);
+  } else {
+    res.json({
+      result: null,
+    });
+  }
 };

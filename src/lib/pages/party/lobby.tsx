@@ -1,4 +1,5 @@
 import { Button, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
+import type { Timestamp } from "firebase/firestore";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 
@@ -11,11 +12,17 @@ interface User {
   photoURL?: string | null;
   uid?: string | null;
 }
+interface PartyData {
+  code: string;
+  createdAt: Timestamp;
+  hostUID: string;
+}
 
 interface LobbyProps {
   gameID: string;
   nickname: string;
   user?: User | null;
+  partyData: PartyData;
 }
 
 interface Player {
@@ -39,12 +46,13 @@ const performFetch = (endpoint: string, body: object) => {
   }
 };
 
-const Lobby = ({ nickname, gameID, user }: LobbyProps) => {
+const Lobby = ({ nickname, gameID, user, partyData }: LobbyProps) => {
   // const [user] = useLogin();
   const [players, setPlayers] = useState<Player[]>([]);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [readyLoading, setReadyLoading] = useState(false);
   const persistedNickname = localStorage.getItem(`nickname_${gameID}`);
+  const isUserInPlayers = players.some((player) => player.id === user?.uid);
   useEffect(() => {
     const unsubscribe = onSnapshot(
       collection(db, `party/${gameID}/players`),
@@ -132,28 +140,36 @@ const Lobby = ({ nickname, gameID, user }: LobbyProps) => {
   };
 
   return (
-    <Stack>
-      <Text>{user?.uid}</Text>
-      <Text mb="20">Your nickname: {nickname || "anonymous"}</Text>
-      {players.map((player) => (
-        <Flex key={player.id} justifyContent="space-between">
-          <Text>{player.nickname}</Text>
-          {player.ready ? (
-            <Text color="green"> Ready </Text>
+    <Flex w="100%">
+      {isUserInPlayers ? (
+        <Stack minW="95%">
+          {/* <Text>{user?.uid}</Text> */}
+          <Text pb="5">Your nickname: {nickname || "anonymous"}</Text>
+          {players.map((player) => (
+            <Flex key={player.id} justifyContent="space-between">
+              <Text>
+                {player.nickname}{" "}
+                {player.id === partyData.hostUID ? "[Host]" : ""}
+              </Text>
+              {player.ready ? (
+                <Text color="green"> Ready </Text>
+              ) : (
+                <Text color="red"> Not Ready </Text>
+              )}
+            </Flex>
+          ))}
+          {readyLoading ? (
+            <Spinner />
           ) : (
-            <Text color="red"> Not Ready </Text>
+            <Button onClick={handleReadyClicked}>
+              {isPlayerReady ? "I'm Not Ready" : "I'm Ready"}
+            </Button>
           )}
-        </Flex>
-      ))}
-      {readyLoading ? (
-        <Spinner />
+        </Stack>
       ) : (
-        <Button onClick={handleReadyClicked}>
-          {isPlayerReady ? "I'm Not Ready" : "I'm Ready"}
-        </Button>
+        <Spinner />
       )}
-      {/* <Button onClick={handleDelete}>Delete</Button> */}
-    </Stack>
+    </Flex>
   );
 };
 
