@@ -1,6 +1,7 @@
-import { Button, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
+import { Button, Center, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
 import type { Timestamp } from "firebase/firestore";
 import { collection, onSnapshot } from "firebase/firestore";
+import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 
 import { db } from "lib/firebase";
@@ -48,11 +49,50 @@ const performFetch = (endpoint: string, body: object) => {
 
 const Lobby = ({ nickname, gameID, user, partyData }: LobbyProps) => {
   // const [user] = useLogin();
+  const router = useRouter();
   const [players, setPlayers] = useState<Player[]>([]);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [readyLoading, setReadyLoading] = useState(false);
   const persistedNickname = localStorage.getItem(`nickname_${gameID}`);
+  const [readyPlayerCount, setReadyPlayerCount] = useState(0);
   const isUserInPlayers = players.some((player) => player.id === user?.uid);
+
+  const handlePlayerChange = useCallback(
+    (player: Player, changeType: "added" | "modified" | "removed") => {
+      if (changeType === "added") {
+        const playerIndex = players.findIndex((p) => p.id === player.id);
+        if (playerIndex !== -1) {
+          setPlayers((prevPlayers) => {
+            const newPlayers = [...prevPlayers];
+            newPlayers[playerIndex] = player;
+            return newPlayers;
+          });
+        } else {
+          setPlayers((prevPlayers) => [...prevPlayers, player]);
+        }
+        if (player.id === user?.uid) {
+          setIsPlayerReady(player.ready);
+        }
+      } else if (changeType === "modified") {
+        setPlayers((prevPlayers) =>
+          prevPlayers.map((prevPlayer) =>
+            prevPlayer.id === player.id ? player : prevPlayer
+          )
+        );
+      } else if (changeType === "removed") {
+        // console.log("remove");
+        if (player.id === user?.uid) {
+          router.push(`/`);
+        }
+        setPlayers((prevPlayers) =>
+          prevPlayers.filter((prevPlayer) => prevPlayer.id !== player.id)
+        );
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [players, user]
+  );
+
   useEffect(() => {
     const unsubscribe = onSnapshot(
       collection(db, `party/${gameID}/players`),
@@ -62,28 +102,14 @@ const Lobby = ({ nickname, gameID, user, partyData }: LobbyProps) => {
             id: change.doc.id,
             ...change.doc.data(),
           } as Player;
-          if (change.type === "added") {
-            setPlayers((prevPlayers) => [...prevPlayers, player]);
-            if (player.id === user?.uid) {
-              setIsPlayerReady(player.ready);
-            }
-          } else if (change.type === "modified") {
-            setPlayers((prevPlayers) =>
-              prevPlayers.map((prevPlayer) =>
-                prevPlayer.id === player.id ? player : prevPlayer
-              )
-            );
-          } else if (change.type === "removed") {
-            setPlayers((prevPlayers) =>
-              prevPlayers.filter((prevPlayer) => prevPlayer.id !== player.id)
-            );
-          }
+          // console.log(`DEBUG ${change.type}`);
+          handlePlayerChange(player, change.type);
         });
       }
     );
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameID, user?.uid]);
-
   useEffect(() => {
     if (!players.find((player) => player.id === user?.uid)) {
       performFetch("/api/join", {
@@ -92,26 +118,35 @@ const Lobby = ({ nickname, gameID, user, partyData }: LobbyProps) => {
         nickname: persistedNickname,
       });
     }
-  }, [players, gameID, persistedNickname, user?.uid]);
-
-  const handleDelete = useCallback(() => {
-    performFetch("/api/delete", {
-      partyId: gameID,
-      uid: user?.uid,
-    });
-  }, [gameID, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameID, persistedNickname, user?.uid]);
 
   useEffect(() => {
-    window.addEventListener("beforeunload", async () => {
-      handleDelete();
-    });
+    setReadyPlayerCount(players.filter((player) => player.ready).length);
+  }, [players]);
+
+  const handleDelete = useCallback(
+    (uid: string | null | undefined) => {
+      performFetch("/api/delete", {
+        partyId: gameID,
+        uid,
+      });
+    },
+    [gameID]
+  );
+
+  useEffect(() => {
+    const unloadHandler = () => {
+      handleDelete(user?.uid);
+    };
+
+    window.addEventListener("beforeunload", unloadHandler);
 
     return () => {
-      window.removeEventListener("beforeunload", async () => {
-        handleDelete();
-      });
+      window.removeEventListener("beforeunload", unloadHandler);
+      handleDelete(user?.uid);
     };
-  }, [handleDelete]);
+  }, [handleDelete, user]);
 
   const handleReadyClicked = async () => {
     setReadyLoading(true);
@@ -142,7 +177,7 @@ const Lobby = ({ nickname, gameID, user, partyData }: LobbyProps) => {
   return (
     <Flex w="100%">
       {isUserInPlayers ? (
-        <Stack minW="95%">
+        <Stack minW="95%" justifyContent="center">
           {/* <Text>{user?.uid}</Text> */}
           <Text pb="5">Your nickname: {nickname || "anonymous"}</Text>
           {players.map((player) => (
@@ -151,20 +186,39 @@ const Lobby = ({ nickname, gameID, user, partyData }: LobbyProps) => {
                 {player.nickname}{" "}
                 {player.id === partyData.hostUID ? "[Host]" : ""}
               </Text>
-              {player.ready ? (
-                <Text color="green"> Ready </Text>
-              ) : (
-                <Text color="red"> Not Ready </Text>
-              )}
+              <Flex align="center">
+                {player.ready ? (
+                  <Text color="green"> Ready </Text>
+                ) : (
+                  <Text color="red"> Not Ready </Text>
+                )}
+                {user?.uid === partyData.hostUID && player.id !== user?.uid ? (
+                  <Button
+                    ml="5"
+                    onClick={() => {
+                      handleDelete(player.id);
+                    }}
+                  >
+                    Kick
+                  </Button>
+                ) : (
+                  <Flex />
+                )}
+              </Flex>
             </Flex>
           ))}
-          {readyLoading ? (
-            <Spinner />
-          ) : (
-            <Button onClick={handleReadyClicked}>
-              {isPlayerReady ? "I'm Not Ready" : "I'm Ready"}
-            </Button>
-          )}
+          <Center flexDir="column">
+            <Text>
+              {readyPlayerCount}/{players.length} are ready
+            </Text>
+            {readyLoading ? (
+              <Spinner />
+            ) : (
+              <Button onClick={handleReadyClicked} maxW="200">
+                {isPlayerReady ? "I'm Not Ready" : "I'm Ready"}
+              </Button>
+            )}
+          </Center>
         </Stack>
       ) : (
         <Spinner />

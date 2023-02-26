@@ -7,7 +7,6 @@ import { auth } from "lib/firebase";
 import { useLogin } from "lib/hooks/useLogin";
 
 import Lobby from "./lobby";
-// import firebase
 
 interface PartyData {
   code: string;
@@ -105,7 +104,7 @@ const Party = () => {
       w="full"
       // bg="blue"
     >
-      <Text>{queryID}</Text>
+      <Text>Lobby code: {(lobbyInfo as PartyData).code}</Text>
       {user && !nickname ? (
         <Stack>
           <Text>{user.uid}</Text>
