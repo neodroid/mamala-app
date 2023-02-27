@@ -84,6 +84,7 @@ const Party = () => {
       setJoinLoading(false);
       // console.error(error);
     }
+    setJoinLoading(false);
   };
 
   if (loading) {
@@ -107,7 +108,7 @@ const Party = () => {
       <Text>Lobby code: {(lobbyInfo as PartyData).code}</Text>
       {user && !nickname ? (
         <Stack>
-          <Text>{user.uid}</Text>
+          {/* <Text>{user.uid}</Text> */}
           <Text> Whats your nickname?</Text>
           <Input
             type="text"

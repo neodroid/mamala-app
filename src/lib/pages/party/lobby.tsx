@@ -1,10 +1,11 @@
-import { Button, Center, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
+import { Button, Flex, Spinner, Stack, Text } from "@chakra-ui/react";
 import type { Timestamp } from "firebase/firestore";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 
 import { db } from "lib/firebase";
+import ReadyButton from "lib/layout/ReadyButton";
 // import { useLogin } from "lib/hooks/useLogin";
 
 interface User {
@@ -56,6 +57,7 @@ const Lobby = ({ nickname, gameID, user, partyData }: LobbyProps) => {
   const persistedNickname = localStorage.getItem(`nickname_${gameID}`);
   const [readyPlayerCount, setReadyPlayerCount] = useState(0);
   const isUserInPlayers = players.some((player) => player.id === user?.uid);
+  const isHost = user !== null && partyData.hostUID === user?.uid;
 
   const handlePlayerChange = useCallback(
     (player: Player, changeType: "added" | "modified" | "removed") => {
@@ -192,7 +194,7 @@ const Lobby = ({ nickname, gameID, user, partyData }: LobbyProps) => {
                 ) : (
                   <Text color="red"> Not Ready </Text>
                 )}
-                {user?.uid === partyData.hostUID && player.id !== user?.uid ? (
+                {isHost && player.id !== user?.uid ? (
                   <Button
                     ml="5"
                     onClick={() => {
@@ -207,18 +209,14 @@ const Lobby = ({ nickname, gameID, user, partyData }: LobbyProps) => {
               </Flex>
             </Flex>
           ))}
-          <Center flexDir="column">
-            <Text>
-              {readyPlayerCount}/{players.length} are ready
-            </Text>
-            {readyLoading ? (
-              <Spinner />
-            ) : (
-              <Button onClick={handleReadyClicked} maxW="200">
-                {isPlayerReady ? "I'm Not Ready" : "I'm Ready"}
-              </Button>
-            )}
-          </Center>
+          <ReadyButton
+            handleReadyClicked={handleReadyClicked}
+            isPlayerReady={isPlayerReady}
+            readyLoading={readyLoading}
+            readyPlayerCount={readyPlayerCount}
+            totalPlayers={players.length}
+            isHost={isHost}
+          />
         </Stack>
       ) : (
         <Spinner />

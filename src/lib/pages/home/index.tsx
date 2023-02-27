@@ -88,20 +88,21 @@ const Home = () => {
       <Text fontWeight="bold" fontSize="2xl" textAlign="center">
         Mamala: The Dancing Game
       </Text>
-      <Input
-        placeholder="Party Code"
-        width="30"
-        value={inputValue}
-        onChange={(e) => {
-          if (e.target.value.length <= 4) {
-            setInputValue(e.target.value.toUpperCase());
-          }
-        }}
-      />
       {isSeraching ? (
         <Spinner />
       ) : (
         <>
+          <Input
+            placeholder="Party Code"
+            width="30"
+            value={inputValue}
+            onChange={(e) => {
+              if (e.target.value.length <= 4) {
+                setInputValue(e.target.value.toUpperCase());
+              }
+            }}
+          />
+
           <Button
             onClick={handleSearchParty}
             isDisabled={inputValue.length !== 4}
